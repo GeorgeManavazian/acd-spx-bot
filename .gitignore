@@ -1,0 +1,6 @@
+.env
+.schwab_token.json
+.schwab_auth_state.json
+__pycache__/
+data_cache/
+*.log
