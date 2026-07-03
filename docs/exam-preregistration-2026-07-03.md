@@ -1,5 +1,16 @@
 # PRE-REGISTERED EXAM — Earner (C4) & Tank (C5) on 2021-2023 held-out data
 
+> **AMENDMENT (2026-07-03, hours after registration, before any exam pricing):**
+> the data vendor's intraday history is a trailing 3-year window (probes on
+> 2021-09-15 / 2022-06-15 / 2023-04-14 / 2023-06-15 all returned 403; the account's
+> plan cannot buy deeper history at any date). **The exam as specified is infeasible
+> on this vendor — a data force majeure, not a peek.** The registration itself is
+> unchanged and remains binding if/when exam-window minute data is acquired from an
+> alternative vendor (e.g. ThetaData). Until then, the project's held-out validation
+> is the FORWARD test: live paper trading (started 2026-07-06) under the same frozen
+> configs, judged by the same pass philosophy. 2021-23 EOD chains (daily strike
+> grids + closing spots) were secured before subscription end for daily-level use.
+
 **Committed 2026-07-03, BEFORE any 2021-2023 SPX intraday/options data exists in this
 repository.** The git timestamp of this file is the proof. After the exam data is
 pulled, NOTHING in this document may change; the configured runs execute once and the
