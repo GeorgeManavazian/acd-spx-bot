@@ -82,6 +82,14 @@ Honest quant work is mostly a cemetery. Residents so far:
 ## Where it stands now
 
 - ✅ Backtest campaign complete (2023-2026, real NBBO minute data, audited engine)
+- 🔴 **THE EXAM RAN — both configurations FAILED.** The pre-registered held-out test
+  (2021-2023, including the 2022 bear) came back: Earner −$599, Tank −$436 over two
+  years. Both passed their drawdown bars; both failed "P&L > 0." Per the registration's
+  pre-agreed interpretation: the campaign's +166%/+120% were substantially curve-fit,
+  and this repo is now — exactly as promised below — a documented case study in
+  disciplined overfitting. Full autopsy: [`results/exam/EXAM-VERDICT.md`](results/exam/EXAM-VERDICT.md).
+  The risk framework held (no blow-up, bear-year profitable); the *edge* didn't
+  generalize. Live paper trading continues as the final arbiter.
 - 🟢 **Live paper trading is on:** both bots launch automatically each market morning against live Schwab data, decide with the byte-identical engine, record fills at real XSP strikes/quotes, and publish an evening P&L report. No order code exists anywhere in this repo — by design.
 - ⏳ **The exam:** 2021-2023 data (including the 2022 bear market) gets pulled next, configs frozen first, run once. That's where the Earner and the Tank live or die.
 - ⏳ Quiet-day iron condor overlay: spec locked and committed *before* its data arrived; runs when the 75k-contract options-data pull completes.
