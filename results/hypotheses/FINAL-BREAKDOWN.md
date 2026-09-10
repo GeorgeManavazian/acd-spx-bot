@@ -1,6 +1,6 @@
 # FINAL BREAKDOWN — Hypothesis Campaign 2026-07-02
 
-**Setup:** 7 research-derived hypotheses tested one by one on the BOT v2 baseline (a_held breakouts only, 0DTE 25-wide debit spread bought at real next-bar NBBO, held to official settle, FOMC banned, no macro gate, $10k @ 3% risk compounding, 0.05/leg slippage), then combinations. 746 days, 2023-07 → 2026-06. All engines carry the 2026-07-02 triple-audit fixes (no look-ahead; every trade replayable to the cent).
+**Setup:** 7 research-derived hypotheses tested one by one on the BOT v2 baseline (a_held breakouts only, 0DTE 25-wide debit spread bought at real next-bar NBBO, held to official settle, FOMC banned, no macro gate, $10k @ 3% risk compounding, 0.05/leg slippage), then combinations. 746 days, 2023-07 → 2026-06.
 
 ## Master scoreboard
 

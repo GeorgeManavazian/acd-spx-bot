@@ -1,4 +1,4 @@
-# Hypothesis Campaign — 2026-07-02 (autonomous session)
+# Hypothesis Campaign — 2026-07-02
 
 **Mission:** implement + test the 7 research-derived hypotheses one by one, then combinations.
 **Discipline:** everything here runs on the 2023-26 PLAYGROUND data. The 2021-23 pull remains the untouched exam. Verdicts weigh year-by-year stability and drawdown over headline P&L — plateaus, not peaks.

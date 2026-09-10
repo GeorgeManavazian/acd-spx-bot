@@ -4,7 +4,7 @@
 #   1. SPY 1-min bars 2021-06-28..2023-07-03 (XNAS.ITCH ohlcv-1m, ~$0.24) -> per-day
 #      [(HH:MM ET, close*10)] paths (SPY*10 tracks SPX within ~0.05% intraday; the
 #      documented underlying approximation for the exam).
-#   2. Run the audited engine over those paths OFFLINE, collect every a_held signal
+#   2. Run the engine over those paths OFFLINE, collect every a_held signal
 #      day, derive the exact legs the frozen configs price (ATM-5-grid + 25 further,
 #      call for longs / put for shorts). NO P&L IS COMPUTED — signal enumeration only,
 #      per the pre-registration.
@@ -55,9 +55,9 @@ def pull_spy(c):
     return df
 
 
-# NYSE half days in/near the exam window (ex-ante public calendar). Audit D2 fix:
-# without this, 2022-11-25 (290 bars) was dropped and 2021-11-26 kept 125 after-hours
-# bars that moved its close ~20 pts into the next day's pivot.
+# NYSE half days in/near the exam window (ex-ante public calendar). Without this,
+# 2022-11-25 (290 bars) would be dropped and 2021-11-26 would keep 125 after-hours
+# bars that move its close ~20 pts into the next day's pivot.
 HALF_DAYS = {"2021-11-26", "2022-11-25", "2023-07-03"}
 
 

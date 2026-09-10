@@ -159,7 +159,7 @@ if __name__ == "__main__":
                          "It runs ONCE.")
     if os.path.exists(os.path.join(OUT, "EXAM-RESULTS.md")):    # run-once, enforced
         raise SystemExit("EXAM ALREADY RAN — results exist. Re-running would violate "
-                         "the pre-registration. (Audit item 9 sentinel.)")
+                         "the pre-registration.")
     os.makedirs(OUT, exist_ok=True)
     paths = exam_paths()
     hist = [e for e in build_hist(paths, SPX, use_atr=False)

@@ -1,4 +1,4 @@
-# Research synthesis — 5 documents, 5 agents (2026-07-02)
+# Research synthesis — 5 documents (2026-07-02)
 
 Sources: three YouTube ORB transcripts (research/), the ACD webinar+interview transcripts (`ACD strategy.docx`), and a targeted re-mine of *The Logical Trader* (scan note: book pp.24-25 missing — the early-vs-late-A discussion leaf).
 

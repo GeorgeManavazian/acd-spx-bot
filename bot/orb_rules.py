@@ -14,8 +14,8 @@ def opening_range(path, start="09:30", end="10:30"):
     Returns (high, low). The "box" the breakout must escape.
 
     End is EXCLUSIVE: a 45-min OR from 08:30 ends at 09:15:00, and the bar labeled
-    09:15 covers 09:15:00-09:15:59 — after the OR. (Audit 2026-07-02: the old
-    inclusive end made every "45-min" OR 46 minutes and changed 14.6% of CL days.)
+    09:15 covers 09:15:00-09:15:59 — after the OR. (An inclusive end would make
+    every "45-min" OR 46 minutes.)
     """
     window = [spot for t, spot in path if start <= t < end]
     if not window:

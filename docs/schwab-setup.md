@@ -1,6 +1,6 @@
 # Connecting the bot to Schwab / ThinkorSwim — setup guide
 
-The paper engine reads live market data through the **Schwab Trader API** (the official API behind ThinkorSwim's data). Paper phase sends **no orders** — it records what the bot *would* do, with real XSP strikes and real bid/ask, into an auditable ledger.
+The paper engine reads live market data through the **Schwab Trader API** (the official API behind ThinkorSwim's data). Paper phase sends **no orders** — it records what the bot *would* do, with real XSP strikes and real bid/ask, into a replayable ledger.
 
 ## One-time setup (your part, ~15 min + a waiting period)
 
@@ -33,15 +33,15 @@ The paper engine reads live market data through the **Schwab Trader API** (the o
 |---|---|
 | `bot/schwab_auth.py` | one-time OAuth; writes `.schwab_token.json` (gitignored) |
 | `bot/schwab_client.py` | data wrapper: $SPX minute bars, quotes, XSP chain NBBO |
-| `bot/live_paper_engine.py` | the paper loop — same audited brain as the backtest |
+| `bot/live_paper_engine.py` | the paper loop — same engine as the backtest |
 
 ## How the paper engine keeps backtest fidelity (the thing we care about)
 
-- Signals come from `acd_micro.build_day` — the **identical audited engine** the backtest uses, run on bars-so-far each minute. No reimplementation, no drift.
+- Signals come from `acd_micro.build_day` — the **same engine** the backtest uses, run on bars-so-far each minute. No reimplementation, no drift.
 - Routing = the campaign configs verbatim: Earner (coil + CPI ban) or Tank (coil + through-pivot), FOMC ban, quiet-day condor at 12:01.
 - Fills recorded at the **next minute's real NBBO** — the backtest's fill convention — but on **real XSP strikes** (this finally kills the SPX÷10 idealization).
 - Every minute's decision is logged to `results/spx/paper/decisions_<date>_<bot>.jsonl`; settled trades append to `results/spx/paper/paper_ledger.csv`.
-- The decision core is a pure function, so each evening it can be replayed from the recorded bars and diffed against what the live loop actually did — any mismatch is a fidelity bug, found the cheap way.
+- The decision core is a pure function, so each evening it can be replayed from the recorded bars and diffed against what the live loop actually did — any mismatch is a fidelity error.
 
 ## Running it (market days, after auth)
 

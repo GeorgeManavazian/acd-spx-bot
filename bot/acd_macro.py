@@ -1,7 +1,7 @@
 # acd_macro.py — the ACD MACRO engine (Fisher's multi-day layer). Consumes a chronological
 # history of days (each = daily OHLC + the Micro Engine's DayResult) and, per day, produces a
 # MacroContext (number line, chop filter, pivot-MA regime, momentum, plus/minus, macro setups)
-# and filters/sizes the micro setups via apply_macro(). No lookahead (uses days <= i).
+# and filters/sizes the micro setups via apply_macro(). Causal (uses days <= i).
 #
 # Spec: docs/superpowers/specs/2026-06-30-acd-macro-engine.md   Rules: strategies/ACD.md Part D
 # Run:  .venv/bin/python bot/acd_macro.py
@@ -163,7 +163,7 @@ def trt(i, history):
         return None
     # TRT is decided at the CLOSE (it needs today's high/low, close, and completed number line),
     # so it is an END-OF-DAY setup (horizon "eod", entry at the close) — NOT an intraday "12:00"
-    # entry (that mislabel was a look-ahead). Gate on the book's CONFIRMED trend (±9 held 2 days
+    # entry. Gate on the book's CONFIRMED trend (±9 held 2 days
     # via number_line_state's state), not a loose cum>=6 (ACD.md D1/D3).
     _, state = number_line_state(history, i)
     e = history[i]
@@ -209,8 +209,7 @@ def macro_context(i, history):
     """Filter/size context for day i's INTRADAY setups. All fields apply_macro uses to GATE
     breakouts and SET conviction (cum, trend_state, regime, momentum, plus_minus) are computed
     from day i-1 — the last COMPLETED day — because today's close is unknown when intraday
-    signals fire. Using day i here leaked today's outcome into today's entry decision (a
-    look-ahead that only admitted breakouts on days that closed the right way). `score` remains
+    signals fire. Using day i here would let today's outcome into today's entry decision. `score` remains
     today's number-line value for END-OF-DAY recording only (apply_macro never reads it)."""
     e = history[i]
     j = i - 1                                   # last completed day = live-safe filter horizon

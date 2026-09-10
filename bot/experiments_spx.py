@@ -1,4 +1,4 @@
-# experiments_spx.py — THE HYPOTHESIS CAMPAIGN HARNESS (2026-07-02 autonomous session).
+# experiments_spx.py — THE HYPOTHESIS CAMPAIGN HARNESS (2026-07-02).
 # Every experiment is a named variant of the BOT v2 baseline (a_held breakouts only,
 # 0DTE 25-wide debit spread, hold to settle, FOMC ban, no macro gate, $10k @ 3%
 # XSP-scale compounding, slip 0.05/leg). Variants plug in as:

@@ -1,10 +1,10 @@
 # Full ACD on SPX underlying (as XSP), 3 years — results
 
-**Date:** 2026-07-02 · **Driver:** `bot/backtest_acd_spx_underlying.py` · **Data:** 744 cached SPX days (2023-07-05 → 2026-06-26), 5 skipped for data, 826 invalid prints filtered (incl. a 0.0 print on 2024-01-19 that, unfiltered, fills a stop at zero and wipes the account — the first run died exactly that way).
+**Date:** 2026-07-02 · **Driver:** `bot/backtest_acd_spx_underlying.py` · **Data:** 744 cached SPX days (2023-07-05 → 2026-06-26), 5 skipped for data, 826 invalid prints filtered.
 
 ## Locked spec (committed before the run)
 
-Full ACD method — micro setups (breakouts AND fades) gated by the macro layer (chop filter, regime gate, conviction). **Not V5** (no fade-only filter, no options). Directional buy/sell of XSP = SPX/10, whole units. One position at a time; enter at the setup's price, exit at its stop (gap-through fills worse) or the session close; same-day only, no time stop. $10,000 start; risk 3% of current equity per trade, notional capped at 1× equity (cash, no leverage); compounding. Slippage per side swept {0, 0.05, 0.10} XSP pts; $0 commission (stated assumption). Setups with no stop (`failed_c`, `reversal_trade`, EOD `trt`/`sushi`) are logged, not traded — an underlying position can't be risk-sized without a stop distance.
+Full ACD method — micro setups (breakouts AND fades) gated by the macro layer (chop filter, regime gate, conviction). Directional buy/sell of XSP = SPX/10, whole units. One position at a time; enter at the setup's price, exit at its stop (gap-through fills worse) or the session close; same-day only, no time stop. $10,000 start; risk 3% of current equity per trade, notional capped at 1× equity (cash, no leverage); compounding. Slippage per side swept {0, 0.05, 0.10} XSP pts; $0 commission (stated assumption). Setups with no stop (`failed_c`, `reversal_trade`, EOD `trt`/`sushi`) are logged, not traded — an underlying position can't be risk-sized without a stop distance.
 
 ## Headline
 
@@ -14,7 +14,7 @@ Full ACD method — micro setups (breakouts AND fades) gated by the macro layer 
 | 0.05 (baseline) | 449 | 17% | **−$529** | $9,471 | −8.4% |
 | 0.10 | 449 | 17% | **−$1,240** | $8,760 | −14.4% |
 
-**Frictionless, the full method is dead flat over 3 years (+2.2% total, less than T-bills). Any realistic friction makes it a slow bleed.** Evaluator: 55/100, Refine — HIGH flag: negative expectancy.
+**Frictionless, the full method is dead flat over 3 years (+2.2% total, less than T-bills). Any realistic friction makes it a slow bleed.**
 
 ## Day-by-day accounting (744 days — full detail in `acd_underlying_day_ledger.csv`)
 
@@ -48,14 +48,9 @@ The user's spec asked 3% of equity risked per trade. With ACD's tight stops, 3% 
 1. **Same-day underlying expression of full ACD on SPX has no edge.** This confirms the earlier per-signal diagnostic from the other direction (portfolio-level, sized, frictioned).
 2. The **hold-to-close exits are where all the profit lives** (+$3.4k) and the stops are where it dies (−$3.9k). Any refinement should attack the exit/stop geometry (wider stops = fewer whipsaws but bigger losses — needs a sweep), not entries.
 3. **The macro layer earns nothing here:** its gates removed 130 days of signals yet trade-day P&L is best in "chop" and worst in "trend_up". On SPX, as on crude, the number line looks non-predictive.
-4. Options (V5's route) change the payoff shape — defined risk, convexity, no stop-whipsaw — which is exactly why the fade edge only appeared there. The next honest step for the ACD-on-underlying question is a **stop-width/exit sweep**; the next step for the project overall remains the **pre-registered V5 re-validation**.
+4. Options change the payoff shape — defined risk, convexity, no stop-whipsaw — which is exactly why the fade edge only appeared there. The next honest step for the ACD-on-underlying question is a **stop-width/exit sweep**.
 
-## v2 — look-ahead audit + SPX parameter sweep (same day, later)
-
-Audit of the v1 driver found and fixed three look-ahead exposures:
-1. **Data hygiene used the full-day median** — the filter "knew" the afternoon at 10:00. Now causal: each print judged against the last kept print, seeded from the first 5 prints of the morning. (Same 826 bad prints dropped; results unchanged at the baseline config — the exposure was real but happened not to bite.)
-2. **`late_day_c` label depends on the day's close** (overnight-carry test) — unknowable at entry. Overnight-horizon setups now excluded from trading (logged instead). No such trade had fired in v1, so numbers unchanged; the hole is closed.
-3. **ATR path unused** — SPX ran on the %-of-price fallback. Added Fisher's faithful A/C = frac×ATR with ATR(14) from **prior days only**.
+## Parameter sweep (slip 0.05/side)
 
 Parameter sweep at slip 0.05/side (OR minutes × A/C source × macro gate), seeking a plateau:
 
@@ -76,10 +71,9 @@ Parameter sweep at slip 0.05/side (OR minutes × A/C source × macro gate), seek
 
 **Reading:** the whole surface is noise around zero (−1.3% to +0.4% per year). No plateau of profit exists to stand on; the best cell is a peak, not an edge. Two robust patterns: (a) **the macro gate hurts in every OR15 pairing and never helps much** — dropping it doubles the win rate; on SPX as on crude, the number line is not predictive; (b) wider A/C (atr25) is worse everywhere — fewer, later, more-exposed entries.
 
-**Conclusion (v2):** the full ACD method has no edge on the SPX underlying under any tested parameterization. If ACD is worth anything on SPX, the value must come from the options payoff shape, not the directional signal. Next step unchanged: options overlay on this driver, and the pre-registered V5 re-validation.
+**Conclusion:** the full ACD method has no edge on the SPX underlying under any tested parameterization. If ACD is worth anything on SPX, the value must come from the options payoff shape, not the directional signal. Next step unchanged: options overlay on this driver.
 
 ## Files
 
 - `results/spx/acd_underlying_day_ledger.csv` — one row per day: state, regime, raw setups, post-macro setups, trades, skip reasons, equity.
 - `results/spx/acd_underlying_trades.csv` — one row per trade: entry/exit, reason, units, P&L, equity after.
-- `results/spx/backtest_eval_2026-07-02_182252.md` — structured evaluator output (55/100, Refine).

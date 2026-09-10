@@ -1,6 +1,6 @@
 #!/bin/zsh
 # run_paper_day.sh — cron entrypoint: launch BOTH paper books (earner + tank) for the
-# day. Each runs the audited engine on live data and exits on its own after the close.
+# day. Each runs the engine on live data and exits on its own after the close.
 # caffeinate keeps the Mac awake through the session. Logs to results/spx/paper/.
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1

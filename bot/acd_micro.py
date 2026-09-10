@@ -154,8 +154,8 @@ def detect_a_events(bars, lv, spec):
             continue
         confirm = _check_hold(bs, tm, beyond, hold_min)
         if confirm is not None:
-            if _to_min(confirm[0]) > cut_m:             # cutoff = latest A ENTRY (audit 2026-07-02: was
-                continue                                # enforced on the pierce -> 93 entries leaked past it)
+            if _to_min(confirm[0]) > cut_m:             # cutoff applies to the latest A ENTRY,
+                continue                                # not to the pierce
             events.append(ACDEvent(typ, confirm[0], confirm[1], True))
         elif not failed[typ]:
             fail = _resolve_failure(bs, tm, beyond, hold_min)   # snap-back (time, price); None if not a confirmed failure
@@ -259,10 +259,9 @@ def setups_from_a(a_event, lv, spec):
 
 
 def setups_from_c(c_event, lv, spec, close):
-    """`close` kept in the signature for compatibility but NO LONGER consulted (audit
-    2026-07-02: the late_day_c vs c_through_pivot label was decided by the day's CLOSE —
-    unknowable at the ~14:30 entry. Close-selected labels are the exact bug class that
-    inflated V5). The label now depends only on the entry TIME: late C-through-pivot =
+    """`close` kept in the signature for compatibility but not consulted: the day's close
+    is unknowable at the ~14:30 entry, so the late_day_c vs c_through_pivot label depends
+    only on the entry TIME: late C-through-pivot =
     late_day_c (overnight candidate; the ACD.md carry check — close beyond both pivot & C
     — belongs to an EOD consumer at 16:00, like trt/sushi); earlier = c_through_pivot."""
     if c_event is None or not c_event.held:
@@ -283,9 +282,8 @@ def setups_from_c(c_event, lv, spec, close):
 def setups_from_failed(events, lv, spec):
     """Fade failed A/C. A failed-A fade is invalidated ONLY if a SAME-side A has ALREADY
     held by the time the fade fires (its confirm time <= the fade's time). An A that holds
-    LATER is unknowable at the fade's entry, so it must NOT retroactively delete the fade —
-    that was a look-ahead bug that flattered every fade backtest (V5, crude); see the replay
-    audit. (This engine breaks on the first held A, so a same-side hold always confirms after
+    LATER is unknowable at the fade's entry, so it must NOT retroactively delete the fade.
+    (This engine breaks on the first held A, so a same-side hold always confirms after
     the failed-A that preceded it — this rule therefore keeps those genuine live fades.)"""
     lo, hi = lv.pivot_band
     held_up_times = [_to_min(e.time) for e in events if e.type == "A_up" and e.held]
@@ -320,8 +318,7 @@ def setups_first_hour(bars, lv, a_event, spec):
     if a_event is None or not a_event.held:
         return []
     fh_end = _add_minutes(spec.session_open, 60)
-    # end EXCLUSIVE — inclusive made a 61-minute "first hour" (same bug class as the
-    # 46-minute opening range fixed in the 2026-07-02 crude audit)
+    # end EXCLUSIVE — an inclusive end would make a 61-minute "first hour"
     fh = [(t, float(p)) for t, p in sorted(bars) if spec.session_open <= t < fh_end]
     if not fh or _to_min(a_event.time) > _to_min(fh_end):
         return []
@@ -421,15 +418,14 @@ if __name__ == "__main__":
 
     # --- LIVE-SAFE: a failed-A fade that fired BEFORE the same-side A later holds is KEPT ---
     # The fade fires at 09:50 (A_up not yet held); A_up only holds at ~10:30. Live you cannot
-    # know the 10:30 hold at 09:50, so it must NOT retroactively delete the fade. Dropping it
-    # was a look-ahead bug that flattered every fade backtest (V5, crude) — see replay_audit_cl.
+    # know the 10:30 hold at 09:50, so it must NOT retroactively delete the fade.
     fa_then_a = OR + [("09:50", 5020), ("09:52", 5000), ("10:20", 5020), ("10:30", 5023)]
     d = build_day("D2c", fa_then_a, PIV_BELOW)
     a_hold = next(e for e in d.events if e.type == "A_up" and e.held)
     fade = [s for s in d.setups if s.name == "failed_a"]
     assert fade, "failed_a fade that fired before a LATER A-hold must be KEPT (live-safe)"
     assert _to_min(fade[0].entry_time) < _to_min(a_hold.time), "fade fired before the A-hold"
-    print("failed_a OK: KEPT when same-side A holds LATER (live-safe; was a look-ahead drop)")
+    print("failed_a OK: KEPT when same-side A holds LATER (live-safe)")
 
     # --- A up held, B, C_down held: plain c (band below -> NOT through pivot) ---
     seq = OR + [("09:50", 5020), ("09:58", 5023), ("10:10", 4996),

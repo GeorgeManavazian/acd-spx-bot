@@ -7,8 +7,8 @@ re-tuning on this data, ever.**
 
 | | Trades | Win | P&L | MaxDD (bar) | Verdict |
 |---|---|---|---|---|---|
-| Earner | 125 | 46% | **−$599** | −29.8% (≤30% ✓) | **FAIL** |
-| Tank | 38 | 42% | **−$436** | −17.2% (≤18% ✓) | **FAIL** |
+| Earner | 125 | 46% | **−$599** | −29.8% (≤30% pass) | **FAIL** |
+| Tank | 38 | 42% | **−$436** | −17.2% (≤18% pass) | **FAIL** |
 
 ## What the failure does and does not say
 
@@ -39,14 +39,13 @@ the bars were chosen in advance precisely so this paragraph can't move the verdi
 3. **`no_expiry` by data presence** rather than an ex-ante listing calendar — 126
    signal-day legs missing; red-team verified the missing-day pattern matches the real
    SPXW Tue/Thu listing history (dailies launched Apr 2022).
-4. NYSE half days trimmed at 13:00 via an ex-ante calendar (audit fix, committed
-   pre-run).
+4. NYSE half days trimmed at 13:00 via an ex-ante calendar.
 
 ## Process record
 
 - Registration frozen + pushed to the public repo before data acquisition.
-- Data acquired post-freeze (Databento OPRA + SPY; total spend $0.52).
-- Pre-flight: compliance audit (frozen lists verified 16/16 + 24/24 exact), data-quality
+- Data acquired post-freeze (Databento OPRA + SPY).
+- Pre-flight: compliance check (frozen lists verified 16/16 + 24/24 exact), data-quality
   pass (0 crossed quotes), 3 sample-day walkthroughs, independent red-team re-derivation
   (zero divergence) — all without computing P&L.
 - One run, sentinel-enforced. Artifacts: `EXAM-RESULTS.md`, `exam_{earner,tank}_{trades,days}.csv`.

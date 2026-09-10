@@ -1,8 +1,8 @@
 # live_paper_engine.py — PAPER TRADING loop: the SAME brain as the backtest, fed by
 # live Schwab data, executing nothing — it records what it WOULD do, with real XSP
-# strikes and real NBBO, into an auditable ledger.
+# strikes and real NBBO, into a replayable ledger.
 #
-# Fidelity is the whole design: signals come from acd_micro.build_day (the audited
+# Fidelity is the whole design: signals come from acd_micro.build_day (the same
 # engine, byte-identical to the backtest) on bars-so-far each minute; routing uses the
 # same coil / through-pivot / quiet-day rules as the campaign configs; fills are
 # recorded at the NEXT minute's real NBBO (the backtest's fill convention). At the

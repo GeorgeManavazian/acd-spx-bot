@@ -14,7 +14,6 @@
 #                occupies the book to the close, so later same-day signals are untakeable).
 #   Exits      : primary = hold to expiry, cash-settle at intrinsic vs the day's close.
 #                comparison = active 50%-target / 50%-stop walk on real close-value bars
-#                (V5's lesson: the exit, not the entry, carried that strategy).
 #   Account    : $10,000 start; XSP scale (all SPX premiums/strikes /10; one XSP contract =
 #                $100/point exactly = SPX/10 assumption). Risk 3% of CURRENT equity per
 #                trade; contracts = floor(3% * equity / (debit*100/10)); max loss = debit.
@@ -25,7 +24,7 @@
 #                active exit crosses 2 legs again.
 #   Ledger     : one row per day (traded / why not) + one row per trade, both CSVs.
 #
-# LOOK-AHEAD GUARDS: signals and macro context inherit the audited v2 underlying driver
+# CAUSALITY GUARDS: signals and macro context inherit the underlying driver's rules
 # (causal hygiene, prior-day pivot/ATR/context). Entry debit is read at the first bar at or
 # AFTER the setup's resolution time; settle uses only the day's close; the active-exit walk
 # only sees bars after entry.
@@ -64,7 +63,7 @@ def legs_for(setup):
 
 def size_contracts(equity, debit_spx, slip=0.0):
     """XSP contracts at 3%-of-equity risk. Per-contract max loss = debit_spx/10 * 100 plus
-    the 2 entry legs' slippage (audit #8: real max loss includes what you paid to get in)."""
+    the 2 entry legs' slippage (real max loss includes what you paid to get in)."""
     per_contract = debit_spx / SCALE * 100.0 + 2.0 * slip
     if per_contract <= 0 or equity <= 0:
         return 0
@@ -82,8 +81,8 @@ LAST_TRADEABLE = "15:59"           # 0DTE SPX/XSP options stop trading at 16:00
 
 def _value_series(struct, long_bars, short_bars, entry_t):
     """Closeable value bars STRICTLY after entry and only while the option still trades —
-    the feed freezes ~16:01-16:19 and blows the spread at 16:00 (audit #4: the walk was
-    'filling' on non-tradeable bars)."""
+    the feed freezes ~16:01-16:19 and blows the spread at 16:00, so the walk never
+    'fills' on non-tradeable bars."""
     Lb = {str(r["time"]): r for _, r in long_bars.iterrows()}
     Sb = {str(r["time"]): r for _, r in short_bars.iterrows()}
     return [(t, close_value(struct, Lb[t], Sb[t]))
@@ -92,7 +91,7 @@ def _value_series(struct, long_bars, short_bars, entry_t):
 
 def _walk_target_stop(debit, series, settle_value, target=TARGET, stop=STOP):
     """exit_target_stop + a triggered flag, so the caller charges exit-leg slippage only
-    when legs were actually crossed (audit #5: cash settles were paying phantom fills)."""
+    when legs were actually crossed (cash settles pay no exit-leg slippage)."""
     for t, v in sorted(series):
         if v - debit >= target * debit or debit - v >= stop * debit:
             return v, True
@@ -122,7 +121,7 @@ def price_day(date, setup, close, structure="debit"):
     pnl_per_share = hold_val - debit for debit, and credit - hold_owed for credit —
     normalized here so pnl fields read the same: entry cost basis + settle value.
     Returns dict or (None, why)."""
-    fill_from = _next_min(setup.entry_time)            # audit #3: same-bar quotes predate the
+    fill_from = _next_min(setup.entry_time)            # same-bar quotes predate the
     if structure == "credit":                          # signal print -> fill the NEXT bar
         typ, short_k, wing_k = credit_legs_for(setup)
         short_bars = load_cached_minutes("SPX", date, date, short_k, typ)
@@ -311,7 +310,7 @@ if __name__ == "__main__":
     me.load_cached_minutes = fake_cache
     globals()["load_cached_minutes"] = fake_cache
 
-    # fills are strictly AFTER the signal minute (audit #3): signal 10:00 -> next bar 10:30
+    # fills are strictly AFTER the signal minute: signal 10:00 -> next bar 10:30
     s = Setup("a_held", "long", "10:00", 5002.0, 4990.0, 1, "intraday", {})
     tr, why = price_day("2024-06-03", s, 5040.0)
     # long 5000C ask@10:30 38, short 5025C bid@10:30 19 -> debit 19; settle 5040 -> 25
@@ -345,7 +344,7 @@ if __name__ == "__main__":
     print("\nLoading 3yr SPX history...")
     paths, _ = load_paths()
     hist = build_hist(paths, SPX, use_atr=False)
-    closes = official_closes(paths)     # audit #2: settle on the EOD chain's official print,
+    closes = official_closes(paths)     # settle on the EOD chain's official print,
     print(f"history: {len(hist)} days\n")   # not the option feed's frozen ~16:01 spot
 
     print(f"--- gate x exit grid (slip {SLIP_BASE}/leg) ---")

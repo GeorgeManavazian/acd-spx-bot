@@ -1,15 +1,15 @@
 # backtest_acd_spx_underlying.py — the FULL ACD method (micro + macro, breakouts AND fades)
-# on the SPX underlying, traded directionally as XSP (= SPX/10), NO options. This is NOT V5:
-# no fade-only filter, no skip-failed_c, no option structures. The question it answers:
+# on the SPX underlying, traded directionally as XSP (= SPX/10), NO options: no fade-only
+# filter, no skip-failed_c, no option structures. The question it answers:
 # "does Fisher's full method, as written, make money just buying/selling the index?"
 #
-# LOCKED SPEC (zero discretion; v2 after the 2026-07-02 look-ahead audit of v1):
+# LOCKED SPEC (zero discretion):
 #   Universe   : every cached SPX day (~3yr, Jul 2023 -> Jun 2026), day paths from the cache.
 #   Signals    : acd_micro.build_day setups, optionally gated by acd_macro.apply_macro.
 #                Only INTRADAY-horizon setups with a price stop are traded. Excluded + logged:
 #                stop=None (failed_c, reversal_trade), EOD entries (trt/sushi), and overnight
 #                setups (late_day_c — its overnight label is decided by the CLOSE, which is
-#                unknowable at its entry time; trading it same-day was a look-ahead exposure).
+#                unknowable at its entry time, so it is not traded same-day).
 #   Execution  : one position at a time (portfolio.simulate_day), enter at the setup's
 #                entry_price, exit on its stop (gap-through fills at the WORSE price) or the
 #                session close. Same-day only; no time stop. Bars are per-minute spots.
@@ -20,10 +20,10 @@
 #                Commission $0 (index-ETF assumption; stated, not hidden).
 #   Ledger     : one row per DAY (traded or not, with the reason) + one row per TRADE.
 #
-# LOOK-AHEAD GUARDS (audit 2026-07-02, v2):
+# CAUSALITY GUARDS:
 #   - data hygiene is CAUSAL: a print is judged against the last KEPT print (seeded from the
-#     first 5 positive prints of the morning), never against the full-day median (v1 bug —
-#     the day's median isn't knowable at 10:00).
+#     first 5 positive prints of the morning), never against the full-day median (the
+#     day's median isn't knowable at 10:00).
 #   - ATR for Fisher's A/C = frac*ATR formula is computed from PRIOR days only (true range
 #     over completed days; today's H/L never enters today's levels).
 #   - pivot = PRIOR day's H/L/C; macro context = day i-1 (acd_macro contract).
@@ -53,8 +53,8 @@ RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results", "spx")
 # ---------------------------------------------------------------- data (load once, causal clean)
 def _clean_path_causal(path, seed_ref=None):
     """Causal hygiene: judge each print against the LAST KEPT print, seeded from the PRIOR
-    day's close (known at 09:30; audit 2026-07-02 v3 — the v2 seed used the median of the
-    first 5 prints, i.e. future prints judged bar 1, inside the OR window). First day ever
+    day's close (known at 09:30; a seed from the morning's own prints would judge bar 1
+    against future prints inside the OR window). First day ever
     falls back to the first positive print. Returns (bars, n_dropped)."""
     if seed_ref is None:
         pos = [s for _, s in path if s > 0]
@@ -71,7 +71,7 @@ def _clean_path_causal(path, seed_ref=None):
 
 def _complete_day(path):
     """A day's path must reach the close: last bar >= 15:55, or a half-day close
-    (12:55-13:20). Truncated files made 'the close' a mid-day print (audit finding #9)."""
+    (12:55-13:20); a truncated file would make 'the close' a mid-day print."""
     last = path[-1][0]
     return last >= "15:55" or ("12:55" <= last <= "13:20")
 
