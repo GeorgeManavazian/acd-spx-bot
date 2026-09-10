@@ -1,113 +1,61 @@
-# ACD SPX Bot — an honest attempt at a trading edge
+# acd-spx-bot
 
-A systematic options-trading bot built on Mark Fisher's **ACD method** (*The Logical Trader*), backtested on three years of real S&P 500 option prices, stress-audited for the bugs that fool most backtests, and now running live paper trading against Schwab market data.
+Mark Fisher's ACD opening-range breakout, expressed as same-day (0DTE) SPX debit spreads and put through a pre-registered held-out test. The test said no. Registration, result, and every per-trade ledger are here.
 
-**The point of this project is not the return number. It's the process:** every strategy here had to survive hostile audits, pre-registered tests, and its own inventor's retractions — and most of them didn't. What's left is small, filtered, and honest about what it hasn't proven yet.
+## Thesis
 
----
+Fisher's ACD method (*The Logical Trader*, 2001) says the opening range sets the day's reference levels, and a clean break of those levels with follow-through tends to carry. A 0DTE SPX debit spread is a capped-risk way to express that one-day directional view: the most I can lose is the debit, and the payoff is convex if the move runs. What has to be true is that breakouts continue often enough, and far enough, to cover the debit plus slippage. An in-sample search cannot answer that, because 22 variants scored on one 3-year dataset will always produce a winner. So the point of the project is the pre-registration: window, two frozen configurations, numeric pass bars, and an interpretation grid committed to git before any exam data existed, then one run.
 
-## The strategy, in depth
+## What I tested and what I learned
 
-### The core idea (Fisher's ACD)
+- The pre-registration is the product. `docs/exam-preregistration-2026-07-03.md` fixes the held-out window (2021-07-06 to 2023-07-03), the two configurations (the Earner and the Tank), the pass bars (P&L above zero at $0.05 per leg slippage; drawdown within 1.5x the in-sample figure), and what each outcome would mean. Registration committed 2026-07-03 at 01:48, results at 20:48 the same day; `bot/exam_run.py` refuses a second run once results exist. Takeaway: decide what counts as failure before you can see the data.
+- Held-out result, 502 sessions: the Earner lost $599 on a $10,000 account (125 trades, 46% win, max drawdown 29.8%); the Tank lost $436 (38 trades, 42% win, max drawdown 17.2%). Both failed the P&L bar and both stayed inside their drawdown bars (30% and 18%), so the failure mode is no edge rather than a blow-up. Slippage at 0, 0.10 and 0.20 per leg was negative in every run. Takeaway: the in-sample edge did not survive out of sample, which is the question a held-out test exists to answer.
+- The same configurations in-sample, 2023-07-05 to 2026-06-26 (746 sessions): the Earner made $16,586 (+166%, 167 trades, 48% win, 20% drawdown) and the Tank $11,958 (+120%, 60 trades, 58% win, 12% drawdown). They were the two survivors of 7 hypotheses and 22 variants. Takeaway: a good in-sample number is a candidate, not a result.
+- One observation from the held-out run: the Earner was profitable through the 2022 bear market (+$1,534 over 70 trades) and lost $2,876 in the first half of 2023, the six months just before its training window. The Tank sat near breakeven throughout. Takeaway: the signal may have a regime it likes, but two years is not enough to say which.
 
-Every morning the market spends its first 15 minutes carving out an **opening range**. ACD draws a trigger line — the **A-level** — a calibrated distance beyond that range (~0.18% of price). Then one rule separates signal from noise: price must not just *touch* the line, it must **hold beyond it for half the opening-range duration** (7.5 minutes). Time confirms the move, not price alone.
+## Graveyard
 
-- Price pushes past the A-level and **holds** → a real breakout (`a_held`). The market has picked a direction with enough conviction to sustain it.
-- Price pokes past and **snaps back** → a failed breakout. Fisher's book said fade it; our data (and the modern Fisher himself) say that trade died with 24-hour markets. We don't take it — see the graveyard below.
+Every other expression of the idea also lost. On SPX at the one-day horizon, neither the breakout nor its failure was mispriced enough to pay for the spread.
 
-### Why options, not stock
-
-We tested the identical signals as pure directional buy/sell of the index: **dead flat over 3 years** (+2.2% before friction, negative after). The edge only exists in option form:
-
-- **The trade:** a same-day (0DTE) debit spread — buy the strike nearest the breakout, sell one 25 points further in the breakout's direction. Defined risk (the debit), convex payoff.
-- **Why it works when stock doesn't:** breakout trading is a right-tail business. Wins only ~45% of the time — but a real trend day pays 2-3× the debit while a dud costs 1×. Stops on stock got whipsawed to death in a median of **4 minutes**; the option's defined risk needs no stop at all.
-- **The exit doctrine (tested three separate ways):** hold to expiry. Profit targets, time stops, and active management all amputate the exact tail the strategy lives on.
-
-### The two production candidates
-
-Both trade only `a_held` breakouts, only when the day is **clean** — no failed pierce earlier in the session (a prior fake-out marks the day as trap-prone; skipping those days improved every metric it touched):
-
-| | **"The Earner"** | **"The Tank"** |
+| Idea | Number | Lesson |
 |---|---|---|
-| Extra filter | skip CPI-release days | breakout must ALSO clear yesterday's pivot zone |
-| Trades (3yr) | 167 (~1/week) | 60 (~1 per 2 weeks) |
-| Win rate | 48% | **58%** |
-| P&L ($10k, 3% risk compounding) | **+$16,586 (+166%)** | +$11,958 (+120%) |
-| Max drawdown | −20% | **−12%** |
-| Years positive | 4 of 4 | 4 of 4 |
-| Profit from the one great year (2025) | 66% | **only 40%** |
+| ACD on the SPX underlying, no options, 2023-07 to 2026-06 | +$220 (+2.2%) before friction, −$529 at $0.05 per side, 449 trades, 17% win | SPX noise crosses tight ACD stops within minutes |
+| Fades (failed breakouts) bought as debit spreads | −$10.1k over 3 years | A fade predicts a stall; a bought spread needs a move, and theta ate it |
+| Fades sold as credit spreads | −$5.0k, negative every year | Halves the loss without changing the sign |
+| Fisher's number-line macro layer | non-predictive in four independent SPX tests; gated +$214 vs ungated +$8,512 | A multi-day regime score adds nothing to a one-day trade |
+| Quiet-day iron condor overlay | condor leg negative in all 16 grid cells (−$486 to −$8,023) despite 58-73% win rates | The 30-40% of quiet mornings that break cost more than the rest pay |
+| Time stops on the breakout spread | win rate 28-31%, +$1.6k to +$5.8k against +$14.7k held to expiry | The spread marks underwater most of the day even when it wins; an early check sells the low |
+| Modern-Fisher parameters (20-minute range, ATR-scaled levels) | +$5.4k to +$13.9k against a +$14.7k baseline | Parameters tuned for futures pits do not transfer |
+| 1DTE iron condors | ruled out in research at roughly $20 per trade, 27% win | Too little premium to survive one bad afternoon |
 
-The Tank's extra demand — two independent resistance structures broken in one move (Fisher: "two signals acting in concert") — trades frequency for robustness. At equal drawdown budgets it actually out-earns the Earner, because robustness converts into sizing headroom.
+## How it was tested
 
-Both ban FOMC days (tested: 15% win rate on Fed days) and hold every position to cash settlement.
+- Data, in-sample: IVolatility 1-minute NBBO for SPX options, 746 sessions, 2023-07-05 to 2026-06-26, 1,785 option legs. Held-out: Databento OPRA 1-minute quotes plus SPY 1-minute bars, 2021-07-06 to 2023-07-03, 502 sessions. In-sample data is from IVolatility; the held-out window is from Databento because it reaches further back.
+- Validation: 7 hypotheses and 22 variants scored in-sample, then two configurations frozen with numeric pass bars and FOMC/CPI calendars written before any exam data existed. Both failing meant no re-tuning on the exam data.
+- Friction assumptions: $0.05 per leg slippage, $0 commissions, 3% of current equity risked per trade, hold to expiry, one trade per day.
+- Known gaps: XSP modeled as SPX/10, so some modeled strikes do not exist. Exam underlying is SPY×10 (median 10.3-point basis to SPX), shifting strike anchoring by about two strikes; 78 of 502 exam days used the SPY×10 close as the settle. Settlement approximated by the end-of-day chain print. 1-minute fills. CPI dates approximate. The Tank's 60 in-sample and 38 exam trades give wide error bars. No 10-year confirmation.
 
----
+## Where it stands
 
-## Results across the whole project
+Paused since July 2026. Research is complete for the question I asked, and the answer was no. The pre-registration, both exam ledgers, and every hypothesis log are committed. A paper-trading stack (Schwab market data, no order code) was built but never run to a track record; there are no paper ledgers here. The registered question has its answer, so the next step is a new question. If I return to it: the same pre-registered design on 60-minute opening ranges, where the follow-through argument has more room, or the same test on a less efficient index.
 
-| Test | Verdict |
-|---|---|
-| Full ACD, SPX underlying (buy/sell) | **flat** — no edge in any of 12 parameterizations |
-| Full ACD as bought option spreads (all setups) | **loses** — theta on a zero-edge signal |
-| Fades (failed breakouts), bought spreads | **−$10k** / 56% expire worthless |
-| Fades as sold credit spreads | **−$5k** — better, still negative every year |
-| Macro "number line" regime layer | **non-predictive** — 4 independent strikes |
-| Breakouts, held, filtered (the campaign) | **the survivors** — table above |
-| 7-hypothesis research campaign (22 variants) | 2 mechanisms adopted, both predicted before testing |
+## What this is not
 
-Full logs: [`results/hypotheses/`](results/hypotheses/) — one markdown log per hypothesis, every variant's numbers, and a [FINAL-BREAKDOWN](results/hypotheses/FINAL-BREAKDOWN.md) with an explicit multiple-testing honesty section.
+Paper trading only. Not investment advice. Does not claim a live edge.
 
----
+## How to run it
 
-## 🪦 The graveyard (strategies this project killed)
+```
+git clone https://github.com/GeorgeManavazian/acd-spx-bot
+cd acd-spx-bot
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python bot/acd_micro.py     # engine self-test, no data needed
+python bot/acd_macro.py     # macro-layer self-test
+```
 
-Honest quant work is mostly a cemetery. Residents so far:
+The backtest drivers (`bot/backtest_acd_spx_*.py`, `bot/experiments_spx.py`) read cached minute data from `data_cache/`, not committed; rebuilding it needs `IVOL_API_KEY` for 2023-26 and `DATABENTO_API_KEY` for the exam window (`bot/pull_exam_databento.py`). Every result above is already under `results/exam/` and `results/hypotheses/`. `bot/exam_run.py --confirm` exits if `results/exam/EXAM-RESULTS.md` exists; that is deliberate.
 
-1. **1DTE iron condors (Option Alpha style)** — ruled out in research: ~$20/trade edge, 27% win rate, brutal psychology. "Fool's gold."
-2. **The crude-oil ACD bot** — graded 79/100 "Deploy" by its first backtest. Then a 7-auditor review found 5 engine bugs (a hidden filter dropping 82% of signals, Sunday bars deflating volatility 12%, a 46-minute "45-minute" opening range...). Rules were re-committed to git **before** the corrected rerun. Both pre-registered tests failed. +$8,650 became −$2,750. Abandoned.
-3. **V5, the fade bot** — the project's former crown jewel: +244%, 82% win rate over 119 trades. An audit later found the fade entries used a look-ahead (entering at the pierce extreme — a price only hindsight can buy). Re-priced on the corrected engine, its trade universe lost $4,852. The edge was the bug.
-4. **Fades in general** — killed three ways (bought, sold, filtered), then confirmed dead by Fisher himself in a post-book webinar: *"The reversals don't work anymore because nobody really panics anymore — 24-hour trading."*
-5. **The number-line macro layer** — Fisher's multi-day regime score. Non-predictive on crude (dedicated study), non-predictive on SPX (four independent tests). Notably absent from Fisher's own modern process.
+## Built with
 
-## 🐛 The bug museum (what almost fooled us)
-
-- **The $9,594 phantom trade:** a single `0.0` price print in cached data filled a stop at zero and "lost" 96% of the test account in one row. Now caught by a causal hygiene filter.
-- **The settle that wasn't:** option-feed spot freezes at ~16:01; settling there instead of the official close was wrong by a median 2.5 points — enough to flip 15% of trades' outcomes.
-- **Time-scrambled files:** ~0.7% of cached CSVs had out-of-order rows; one day's "close" was actually its 2:32pm print, 73 points off.
-- **The label that knew the future:** one setup's classification depended on the daily close — decided hours after its entry time. Never traded, defused anyway.
-- **The lesson generalized:** look-ahead isn't one bug, it's a *class*. It lives in data cleaning (a filter that knows the day's median), in labels, in fills (same-bar quotes predate the signal), and — most dangerously — in *strategy selection itself* (tuning on the data you score on). This repo's defenses, in order: hostile multi-auditor reviews, cent-exact trade replays by independent re-implementation, pre-registered rule commits, and a held-out exam dataset the chosen configs have never touched.
-
----
-
-## Where it stands now
-
-- ✅ Backtest campaign complete (2023-2026, real NBBO minute data, audited engine)
-- 🔴 **THE EXAM RAN — both configurations FAILED.** The pre-registered held-out test
-  (2021-2023, including the 2022 bear) came back: Earner −$599, Tank −$436 over two
-  years. Both passed their drawdown bars; both failed "P&L > 0." Per the registration's
-  pre-agreed interpretation: the campaign's +166%/+120% were substantially curve-fit,
-  and this repo is now — exactly as promised below — a documented case study in
-  disciplined overfitting. Full autopsy: [`results/exam/EXAM-VERDICT.md`](results/exam/EXAM-VERDICT.md).
-  The risk framework held (no blow-up, bear-year profitable); the *edge* didn't
-  generalize. Live paper trading continues as the final arbiter.
-- 🟢 **Live paper trading is on:** both bots launch automatically each market morning against live Schwab data, decide with the byte-identical engine, record fills at real XSP strikes/quotes, and publish an evening P&L report. No order code exists anywhere in this repo — by design.
-- ⏳ **The exam:** 2021-2023 data (including the 2022 bear market) gets pulled next, configs frozen first, run once. That's where the Earner and the Tank live or die.
-- ⏳ Quiet-day iron condor overlay: spec locked and committed *before* its data arrived; runs when the 75k-contract options-data pull completes.
-
-## Repository map
-
-| Path | Contents |
-|---|---|
-| `bot/acd_micro.py`, `acd_macro.py` | the signal engine (levels → events → setups), pure & self-tested |
-| `bot/backtest_acd_spx_*.py` | the audited backtest drivers (underlying + options) |
-| `bot/experiments_spx.py` | the hypothesis-campaign harness (every variant reproducible) |
-| `bot/backtest_portfolio_condor.py` | the locked condor + combined-book spec |
-| `bot/live_paper_engine.py`, `schwab_*.py` | live paper stack (data-only, no order code) |
-| `results/` | every writeup, every hypothesis log, the recommended configs' trade ledgers |
-| `docs/` | research synthesis, broker setup guide |
-
-## Honesty footer
-
-Backtests use vendor minute-NBBO data with known idealizations (XSP modeled as SPX÷10; official settlement approximated by the end-of-day chain print; 1-minute fill granularity). All results are **in-sample** until the frozen configs pass (a) the 2021-23 held-out test and (b) live paper months. If they fail, this repo becomes a well-documented case study in disciplined overfitting — which would also be worth reading.
-
-*Built by George Manavazian with Claude (Anthropic) as pair programmer and adversarial auditor.*
+Python, pandas, IVolatility (in-sample minute NBBO), Databento (held-out window), schwab-py (paper data feed). Built with AI-assisted development (Claude Code); the research questions, hypotheses, validation choices, and conclusions are mine.
