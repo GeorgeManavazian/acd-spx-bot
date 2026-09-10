@@ -1,6 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
 .env
+.DS_Store
+scratchpad/
+
+# Data (never committed; rebuild from vendor APIs)
+data/
+data_cache/
+*.parquet
+*.db
+
+# Broker auth state (Schwab OAuth)
 .schwab_token.json
 .schwab_auth_state.json
-__pycache__/
-data_cache/
+
+# Paper-trading run output and logs
+results/spx/paper/
 *.log
